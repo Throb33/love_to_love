@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "db:push": "node prisma/setup.js",
+    "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "studio": "remotion studio",
     "preview": "remotion studio",

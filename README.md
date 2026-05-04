@@ -22,6 +22,8 @@ npm run dev
 
 访问 `http://127.0.0.1:3000`。
 
+本地 PostgreSQL 连接默认使用 `DATABASE_URL`。开发环境可使用本机 PostgreSQL 17 服务，端口 `54329`，建议使用独立 schema `love_to_love`。
+
 演示账号：
 
 - 普通用户：`18600000002`
