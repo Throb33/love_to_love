@@ -1,0 +1,34 @@
+{
+  "name": "love-to-love",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:push": "node prisma/setup.js",
+    "db:seed": "prisma db seed",
+    "studio": "remotion studio",
+    "preview": "remotion studio",
+    "render": "remotion render BlindDate out/blind-date.mp4",
+    "still": "remotion still BlindDate --frame=90 --scale=0.25"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@remotion/cli": "latest",
+    "next": "^16.2.4",
+    "prisma": "^6.19.3",
+    "react": "latest",
+    "react-dom": "latest",
+    "remotion": "latest",
+    "typescript": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}

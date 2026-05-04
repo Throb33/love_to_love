@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  BANNED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MatchStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum ReviewResult {
+  APPROVED
+  REJECTED
+}
+
+enum ReportType {
+  FAKE_PROFILE
+  HARASSMENT
+  ADVERTISING
+  FRAUD_RISK
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+}
+
+model User {
+  id             String              @id @default(cuid())
+  phone          String              @unique
+  role           Role                @default(USER)
+  status         UserStatus          @default(DRAFT)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  lastActiveAt   DateTime            @default(now())
+  profile        Profile?
+  preferences    PartnerPreference?
+  likesSent      Like[]              @relation("LikeFrom")
+  likesReceived  Like[]              @relation("LikeTo")
+  skipsSent      Skip[]              @relation("SkipFrom")
+  messages       Message[]
+  matchesA       Match[]             @relation("MatchA")
+  matchesB       Match[]             @relation("MatchB")
+  reportsFiled   Report[]            @relation("Reporter")
+  reportsAgainst Report[]            @relation("Reported")
+  reviewsMade    ReviewRecord[]      @relation("Reviewer")
+  reviewsTarget  ReviewRecord[]      @relation("ReviewedUser")
+}
+
+model Profile {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nickname         String
+  gender           Gender
+  birthYear        Int
+  city             String
+  heightCm         Int?
+  education        String
+  occupation       String
+  incomeRange      String?
+  maritalStatus    String?
+  hasChildren      Boolean  @default(false)
+  marriageTimeline String?
+  bio              String
+  idealPartner     String?
+  avatarUrl        String
+  interests        String   @default("[]")
+  smokes           Boolean  @default(false)
+  drinks           Boolean  @default(false)
+  workRest         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model PartnerPreference {
+  userId               String   @id
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minAge               Int
+  maxAge               Int
+  preferredCities      String   @default("[]")
+  minHeightCm          Int?
+  maxHeightCm          Int?
+  educationRequirement String?
+  maritalStatuses      String   @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ReviewRecord {
+  id         String       @id @default(cuid())
+  userId     String
+  reviewerId String
+  result     ReviewResult
+  reason     String?
+  createdAt  DateTime     @default(now())
+  user       User         @relation("ReviewedUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer   User         @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+  fromUser   User     @relation("LikeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User     @relation("LikeTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+}
+
+model Skip {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+  fromUser   User     @relation("SkipFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+}
+
+model Match {
+  id        String      @id @default(cuid())
+  userAId   String
+  userBId   String
+  status    MatchStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+  closedAt  DateTime?
+  userA     User        @relation("MatchA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User        @relation("MatchB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  reports   Report[]
+
+  @@unique([userAId, userBId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matchId   String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reportedUserId String
+  matchId        String?
+  type           ReportType
+  description    String
+  status         ReportStatus @default(OPEN)
+  adminNote      String?
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+  reporter       User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User         @relation("Reported", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  match          Match?       @relation(fields: [matchId], references: [id], onDelete: SetNull)
+}

@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# next
+.next/
+out/
+
+# local env
+.env
+.env*.local
+
+# local database
+prisma/dev.db
+prisma/dev.db-journal
+
+# logs
+*.log
+
+# build cache
+tsconfig.tsbuildinfo
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
