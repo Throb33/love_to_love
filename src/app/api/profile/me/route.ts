@@ -1,5 +1,6 @@
 import {badRequest, json, requireApiUser, unauthorized} from '@/lib/api';
 import {toList} from '@/lib/json';
+import {syncProfilePhotos} from '@/lib/photos';
 import {prisma} from '@/lib/prisma';
 
 type NextProfileReviewFields = {
@@ -13,7 +14,6 @@ type NextProfileReviewFields = {
   bio: string;
   idealPartner: string | null;
   avatarUrl: string;
-  photos: string;
   interests: string;
 };
 
@@ -37,7 +37,6 @@ const changedDisplayProfile = (
     profile.bio !== next.bio ||
     profile.idealPartner !== next.idealPartner ||
     profile.avatarUrl !== next.avatarUrl ||
-    profile.photos !== next.photos ||
     profile.interests !== next.interests
   );
 };
@@ -72,6 +71,7 @@ export async function PUT(request: Request) {
   const idealPartner = String(body.idealPartner ?? '').trim() || null;
   const photos = toList(body.photos);
   const interests = toList(body.interests);
+  const photoUrls = JSON.parse(photos) as string[];
 
   if (!nickname || !birthYear || !city || !education || !occupation || !avatarUrl) {
     return badRequest('请填写昵称、出生年份、城市、学历、职业和头像');
@@ -92,7 +92,6 @@ export async function PUT(request: Request) {
     bio,
     idealPartner,
     avatarUrl,
-    photos,
     interests,
   });
 
@@ -143,6 +142,8 @@ export async function PUT(request: Request) {
     },
   });
 
+  await syncProfilePhotos(user.id, photoUrls);
+
   const preferences = await prisma.partnerPreference.upsert({
     where: {userId: user.id},
     update: {
@@ -166,6 +167,17 @@ export async function PUT(request: Request) {
     },
   });
 
+  await prisma.userSetting.upsert({
+    where: {userId: user.id},
+    update: {
+      visibleInRecommend: body.visibleInRecommend !== false,
+    },
+    create: {
+      userId: user.id,
+      visibleInRecommend: body.visibleInRecommend !== false,
+    },
+  });
+
   if (user.status === 'REJECTED') {
     await prisma.user.update({
       where: {id: user.id},
@@ -185,6 +197,8 @@ export async function PUT(request: Request) {
     profile,
     preferences,
     requiresReview,
-    message: requiresReview ? '资料已保存，展示资料变更需要管理员重新审核' : '资料已保存',
+    message: requiresReview
+      ? '资料已保存，展示资料变更需要管理员重新审核'
+      : '资料已保存，相册新图会在管理员照片审核通过后对外展示',
   });
 }

@@ -245,6 +245,15 @@ textarea {
   background: #fff;
 }
 
+.review-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
 .photo-tile {
   position: relative;
 }
@@ -381,6 +390,10 @@ textarea {
   background: #fce0e6;
 }
 
+.message.pending {
+  opacity: 0.78;
+}
+
 .message small {
   display: block;
   margin-top: 6px;
@@ -401,6 +414,36 @@ textarea {
   font-size: 13px;
   font-weight: 900;
   vertical-align: middle;
+}
+
+.inline-action {
+  margin-left: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--brand-dark);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.report-context {
+  border-left: 3px solid var(--line);
+  padding-left: 12px;
+}
+
+.report-context p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.check-row input {
+  width: auto;
 }
 
 .table {

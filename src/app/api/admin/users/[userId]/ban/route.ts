@@ -5,13 +5,18 @@ export async function POST(
   _request: Request,
   context: {params: Promise<{userId: string}>},
 ) {
-  const {response} = await requireApiAdmin();
+  const {user: admin, response} = await requireApiAdmin();
 
   if (response) {
     return response;
   }
 
   const {userId} = await context.params;
-  await prisma.user.update({where: {id: userId}, data: {status: 'BANNED'}});
+  await prisma.$transaction([
+    prisma.user.update({where: {id: userId}, data: {status: 'BANNED'}}),
+    prisma.moderationLog.create({
+      data: {actorId: admin.id, targetUserId: userId, action: 'USER_BANNED'},
+    }),
+  ]);
   return json({ok: true});
 }

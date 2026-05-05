@@ -48,6 +48,23 @@ enum ReportStatus {
   RESOLVED
 }
 
+enum PhotoStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ModerationAction {
+  PROFILE_APPROVED
+  PROFILE_REJECTED
+  PHOTO_APPROVED
+  PHOTO_REJECTED
+  USER_BANNED
+  USER_UNBANNED
+  REPORT_RESOLVED
+  MESSAGE_BLOCKED
+}
+
 model User {
   id             String              @id @default(cuid())
   phone          String              @unique
@@ -58,6 +75,9 @@ model User {
   lastActiveAt   DateTime            @default(now())
   profile        Profile?
   preferences    PartnerPreference?
+  settings       UserSetting?
+  profilePhotos  ProfilePhoto[]      @relation("ProfilePhotos")
+  photoReviews   ProfilePhoto[]      @relation("PhotoReviewer")
   likesSent      Like[]              @relation("LikeFrom")
   likesReceived  Like[]              @relation("LikeTo")
   skipsSent      Skip[]              @relation("SkipFrom")
@@ -68,6 +88,8 @@ model User {
   reportsAgainst Report[]            @relation("Reported")
   reviewsMade    ReviewRecord[]      @relation("Reviewer")
   reviewsTarget  ReviewRecord[]      @relation("ReviewedUser")
+  moderationLogs ModerationLog[]      @relation("ModerationActor")
+  moderatedLogs  ModerationLog[]      @relation("ModerationTarget")
 }
 
 model SmsVerificationCode {
@@ -112,6 +134,23 @@ model Profile {
   updatedAt        DateTime @updatedAt
 }
 
+model ProfilePhoto {
+  id           String      @id @default(cuid())
+  userId       String
+  url          String
+  status       PhotoStatus @default(PENDING)
+  rejectReason String?
+  reviewerId   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation("ProfilePhotos", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer     User?       @relation("PhotoReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, url])
+  @@index([status, createdAt])
+}
+
 model PartnerPreference {
   userId               String   @id
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -124,6 +163,16 @@ model PartnerPreference {
   maritalStatuses      String   @default("[]")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+}
+
+model UserSetting {
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visibleInRecommend  Boolean  @default(true)
+  allowChatPreview    Boolean  @default(true)
+  hideLastActive      Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model ReviewRecord {
@@ -152,6 +201,7 @@ model Skip {
   id         String   @id @default(cuid())
   fromUserId String
   toUserId   String
+  reason     String?
   createdAt  DateTime @default(now())
   fromUser   User     @relation("SkipFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
 
@@ -204,4 +254,19 @@ model Report {
   @@index([reporterId, reportedUserId, status])
   @@index([reportedUserId, status])
   @@index([createdAt])
+}
+
+model ModerationLog {
+  id           String           @id @default(cuid())
+  actorId      String?
+  targetUserId String?
+  action       ModerationAction
+  note         String?
+  metadata     String           @default("{}")
+  createdAt    DateTime         @default(now())
+  actor        User?            @relation("ModerationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser   User?            @relation("ModerationTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([targetUserId, createdAt])
 }

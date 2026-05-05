@@ -19,7 +19,7 @@ export const getCurrentUser = async () => {
 
   return prisma.user.findUnique({
     where: {id: userId},
-    include: {profile: true, preferences: true},
+    include: {profile: true, preferences: true, settings: true, profilePhotos: true},
   });
 };
 

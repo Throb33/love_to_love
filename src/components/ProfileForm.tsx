@@ -1,7 +1,7 @@
 'use client';
 
-import {useState} from 'react';
 import {useRouter} from 'next/navigation';
+import {useState} from 'react';
 
 type ProfileState = {
   nickname: string;
@@ -25,11 +25,16 @@ type ProfileState = {
   maxHeightCm: number;
   educationRequirement: string;
   maritalStatuses: string;
+  visibleInRecommend: boolean;
 };
+
+const cityOptions = ['上海', '北京', '深圳', '广州', '杭州', '南京', '苏州', '成都', '武汉'];
+const educationOptions = ['大专', '本科', '硕士', '博士'];
+const maritalOptions = ['未婚', '离异', '丧偶'];
 
 const splitList = (value: string) =>
   value
-    .split(/[,\n，、]/)
+    .split(/[,，、\n]/)
     .map((item) => item.trim())
     .filter(Boolean);
 
@@ -78,12 +83,13 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
     maxHeightCm: 190,
     educationRequirement: '本科',
     maritalStatuses: '未婚',
+    visibleInRecommend: true,
     ...initial,
   });
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const update = (key: keyof ProfileState, value: string | number) => {
+  const update = (key: keyof ProfileState, value: string | number | boolean) => {
     setForm((current) => ({...current, [key]: value}));
   };
 
@@ -95,7 +101,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       const urls = await uploadImages(files);
       if (urls[0]) {
         update('avatarUrl', urls[0]);
-        setMessage('头像已上传，保存后将进入管理员审核');
+        setMessage('头像已上传，保存后如影响展示资料会进入资料审核');
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '头像上传失败');
@@ -108,7 +114,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       const urls = await uploadImages(files);
       const nextPhotos = [...photoList, ...urls].slice(0, 6).join(',');
       update('photos', nextPhotos);
-      setMessage('相册已更新，保存后将进入管理员审核');
+      setMessage('相册已更新，保存后新照片会进入照片审核');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '相册上传失败');
     }
@@ -119,7 +125,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       'photos',
       photoList.filter((item) => item !== url).join(','),
     );
-    setMessage('相册已修改，保存后将进入管理员审核');
+    setMessage('相册已修改，保存后生效');
   };
 
   const save = async () => {
@@ -154,73 +160,98 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       <div className="form-grid">
         <div className="field">
           <label>昵称</label>
-          <input value={form.nickname} onChange={(e) => update('nickname', e.target.value)} />
+          <input value={form.nickname} onChange={(event) => update('nickname', event.target.value)} />
         </div>
         <div className="field">
           <label>性别</label>
-          <select value={form.gender} onChange={(e) => update('gender', e.target.value)}>
+          <select value={form.gender} onChange={(event) => update('gender', event.target.value)}>
             <option value="MALE">男</option>
             <option value="FEMALE">女</option>
           </select>
         </div>
         <div className="field">
           <label>出生年份</label>
-          <input type="number" value={form.birthYear} onChange={(e) => update('birthYear', Number(e.target.value))} />
+          <input
+            max={2008}
+            min={1946}
+            type="number"
+            value={form.birthYear}
+            onChange={(event) => update('birthYear', Number(event.target.value))}
+          />
         </div>
         <div className="field">
           <label>所在城市</label>
-          <input value={form.city} onChange={(e) => update('city', e.target.value)} />
+          <select value={form.city} onChange={(event) => update('city', event.target.value)}>
+            {cityOptions.map((city) => (
+              <option key={city}>{city}</option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label>身高 cm</label>
-          <input type="number" value={form.heightCm} onChange={(e) => update('heightCm', Number(e.target.value))} />
+          <input
+            max={230}
+            min={120}
+            type="number"
+            value={form.heightCm}
+            onChange={(event) => update('heightCm', Number(event.target.value))}
+          />
         </div>
         <div className="field">
           <label>学历</label>
-          <select value={form.education} onChange={(e) => update('education', e.target.value)}>
-            <option>大专</option>
-            <option>本科</option>
-            <option>硕士</option>
-            <option>博士</option>
+          <select value={form.education} onChange={(event) => update('education', event.target.value)}>
+            {educationOptions.map((education) => (
+              <option key={education}>{education}</option>
+            ))}
           </select>
         </div>
         <div className="field">
           <label>职业</label>
-          <input value={form.occupation} onChange={(e) => update('occupation', e.target.value)} />
+          <input value={form.occupation} onChange={(event) => update('occupation', event.target.value)} />
         </div>
         <div className="field">
           <label>收入区间</label>
-          <input value={form.incomeRange} onChange={(e) => update('incomeRange', e.target.value)} />
+          <input value={form.incomeRange} onChange={(event) => update('incomeRange', event.target.value)} />
         </div>
         <div className="field">
           <label>婚姻状态</label>
-          <input value={form.maritalStatus} onChange={(e) => update('maritalStatus', e.target.value)} />
+          <select value={form.maritalStatus} onChange={(event) => update('maritalStatus', event.target.value)}>
+            {maritalOptions.map((status) => (
+              <option key={status}>{status}</option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label>兴趣标签</label>
-          <input value={form.interests} onChange={(e) => update('interests', e.target.value)} />
+          <input value={form.interests} onChange={(event) => update('interests', event.target.value)} />
         </div>
         <div className="field full">
           <label>头像</label>
           <div className="media-upload">
             <img className="avatar large" src={form.avatarUrl} alt="" />
             <div className="grid">
-              <input value={form.avatarUrl} onChange={(e) => update('avatarUrl', e.target.value)} />
-              <input accept="image/*" type="file" onChange={(e) => uploadAvatar(e.target.files)} />
+              <input value={form.avatarUrl} onChange={(event) => update('avatarUrl', event.target.value)} />
+              <input accept="image/*" type="file" onChange={(event) => uploadAvatar(event.target.files)} />
             </div>
           </div>
         </div>
         <div className="field full">
           <label>相册，最多 6 张</label>
-          <input accept="image/*" multiple type="file" onChange={(e) => uploadAlbum(e.target.files)} />
-          <input value={form.photos} onChange={(e) => update('photos', e.target.value)} placeholder="也可粘贴图片 URL，用逗号分隔" />
-          <p className="subtle">相册属于展示资料，保存后需要管理员重新审核。</p>
+          <input accept="image/*" multiple type="file" onChange={(event) => uploadAlbum(event.target.files)} />
+          <input
+            value={form.photos}
+            onChange={(event) => update('photos', event.target.value)}
+            placeholder="也可粘贴图片 URL，用逗号分隔"
+          />
+          <p className="subtle">新照片保存后会进入照片审核，通过后才会在推荐和资料页对外展示。</p>
           {photoList.length > 0 ? (
             <div className="photo-grid">
               {photoList.map((url) => (
                 <div className="photo-tile" key={url}>
                   <img src={url} alt="" />
-                  <button type="button" onClick={() => removePhoto(url)}>移除</button>
+                  <button type="button" onClick={() => removePhoto(url)}>
+                    移除
+                  </button>
                 </div>
               ))}
             </div>
@@ -228,45 +259,76 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
         </div>
         <div className="field full">
           <label>个人介绍</label>
-          <textarea value={form.bio} onChange={(e) => update('bio', e.target.value)} />
+          <textarea value={form.bio} onChange={(event) => update('bio', event.target.value)} />
         </div>
         <div className="field full">
           <label>理想对象</label>
-          <textarea value={form.idealPartner} onChange={(e) => update('idealPartner', e.target.value)} />
+          <textarea value={form.idealPartner} onChange={(event) => update('idealPartner', event.target.value)} />
         </div>
         <div className="field">
           <label>偏好最小年龄</label>
-          <input min={18} max={80} type="number" value={form.minAge} onChange={(e) => update('minAge', Number(e.target.value))} />
+          <input
+            max={80}
+            min={18}
+            type="number"
+            value={form.minAge}
+            onChange={(event) => update('minAge', Number(event.target.value))}
+          />
         </div>
         <div className="field">
           <label>偏好最大年龄</label>
-          <input min={18} max={80} type="number" value={form.maxAge} onChange={(e) => update('maxAge', Number(e.target.value))} />
+          <input
+            max={80}
+            min={18}
+            type="number"
+            value={form.maxAge}
+            onChange={(event) => update('maxAge', Number(event.target.value))}
+          />
         </div>
         <div className="field">
           <label>偏好城市</label>
-          <input value={form.preferredCities} onChange={(e) => update('preferredCities', e.target.value)} />
+          <input value={form.preferredCities} onChange={(event) => update('preferredCities', event.target.value)} />
         </div>
         <div className="field">
           <label>学历要求</label>
-          <select value={form.educationRequirement} onChange={(e) => update('educationRequirement', e.target.value)}>
-            <option>大专</option>
-            <option>本科</option>
-            <option>硕士</option>
-            <option>博士</option>
+          <select value={form.educationRequirement} onChange={(event) => update('educationRequirement', event.target.value)}>
+            {educationOptions.map((education) => (
+              <option key={education}>{education}</option>
+            ))}
           </select>
         </div>
         <div className="field">
           <label>偏好最小身高</label>
-          <input min={120} max={230} type="number" value={form.minHeightCm} onChange={(e) => update('minHeightCm', Number(e.target.value))} />
+          <input
+            max={230}
+            min={120}
+            type="number"
+            value={form.minHeightCm}
+            onChange={(event) => update('minHeightCm', Number(event.target.value))}
+          />
         </div>
         <div className="field">
           <label>偏好最大身高</label>
-          <input min={120} max={230} type="number" value={form.maxHeightCm} onChange={(e) => update('maxHeightCm', Number(e.target.value))} />
+          <input
+            max={230}
+            min={120}
+            type="number"
+            value={form.maxHeightCm}
+            onChange={(event) => update('maxHeightCm', Number(event.target.value))}
+          />
         </div>
-        <div className="field full">
+        <div className="field">
           <label>可接受婚姻状态</label>
-          <input value={form.maritalStatuses} onChange={(e) => update('maritalStatuses', e.target.value)} />
+          <input value={form.maritalStatuses} onChange={(event) => update('maritalStatuses', event.target.value)} />
         </div>
+        <label className="check-row">
+          <input
+            checked={form.visibleInRecommend}
+            type="checkbox"
+            onChange={(event) => update('visibleInRecommend', event.target.checked)}
+          />
+          进入推荐池
+        </label>
       </div>
       <div className="actions">
         <button className="button ghost" disabled={saving} type="button" onClick={save}>

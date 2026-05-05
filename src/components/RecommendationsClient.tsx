@@ -85,7 +85,15 @@ export function RecommendationsClient() {
   };
 
   const act = async (userId: string, action: 'like' | 'skip') => {
-    const res = await fetch(`/api/recommendations/${userId}/${action}`, {method: 'POST'});
+    const reason =
+      action === 'skip'
+        ? window.prompt('不感兴趣的原因，可留空', '暂时不合适')?.trim() ?? ''
+        : '';
+    const res = await fetch(`/api/recommendations/${userId}/${action}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({reason}),
+    });
     const data = await res.json();
 
     if (!res.ok) {

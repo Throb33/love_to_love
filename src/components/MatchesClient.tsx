@@ -15,7 +15,7 @@ type Match = {
     avatarUrl: string;
     interests: string[];
   } | null;
-  lastMessage?: {content: string} | null;
+  lastMessage?: {content: string; createdAt: string} | null;
 };
 
 export function MatchesClient() {
@@ -72,6 +72,11 @@ export function MatchesClient() {
                 </div>
               ) : null}
               <p>{match.lastMessage?.content ?? '还没有消息'}</p>
+              {match.lastMessage ? (
+                <p className="subtle">
+                  最后消息：{new Date(match.lastMessage.createdAt).toLocaleString('zh-CN')}
+                </p>
+              ) : null}
               <div className="actions">
                 <Link className="button" href={`/chat/${match.id}`}>
                   进入聊天

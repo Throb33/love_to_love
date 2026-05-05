@@ -24,6 +24,14 @@ export async function POST(
     prisma.reviewRecord.create({
       data: {userId, reviewerId: admin.id, result: 'REJECTED', reason},
     }),
+    prisma.moderationLog.create({
+      data: {
+        actorId: admin.id,
+        targetUserId: userId,
+        action: 'PROFILE_REJECTED',
+        note: reason,
+      },
+    }),
   ]);
 
   return json({ok: true});

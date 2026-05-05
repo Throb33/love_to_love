@@ -4,7 +4,7 @@ import {prisma} from '@/lib/prisma';
 const sensitiveWords = ['诈骗', '转账', '博彩', '裸聊', '贷款', '加群'];
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: {params: Promise<{matchId: string}>},
 ) {
   const {user, response} = await requireApiApprovedUser();
@@ -25,15 +25,23 @@ export async function GET(
     data: {readAt: new Date()},
   });
 
-  const messages = await prisma.message.findMany({
-    where: {matchId},
-    orderBy: {createdAt: 'asc'},
+  const url = new URL(request.url);
+  const before = url.searchParams.get('before');
+  const rows = await prisma.message.findMany({
+    where: {
+      matchId,
+      ...(before ? {createdAt: {lt: new Date(before)}} : {}),
+    },
+    orderBy: {createdAt: 'desc'},
     take: 30,
   });
+  const messages = rows.reverse();
 
   return json({
     match,
     otherUserId: match.userAId === user.id ? match.userBId : match.userAId,
+    canSend: match.status === 'ACTIVE',
+    hasMore: rows.length === 30,
     messages,
   });
 }
@@ -53,10 +61,18 @@ export async function POST(
   const content = String(body.content ?? '').trim();
 
   if (!content || content.length > 500) {
-    return badRequest('消息不能为空，且最多 500 字');
+    return badRequest('消息不能为空，且最大 500 字');
   }
 
   if (sensitiveWords.some((word) => content.includes(word))) {
+    await prisma.moderationLog.create({
+      data: {
+        actorId: user.id,
+        action: 'MESSAGE_BLOCKED',
+        note: '消息命中高风险词',
+        metadata: JSON.stringify({matchId}),
+      },
+    });
     return badRequest('消息包含高风险词汇，请修改后再发送');
   }
 

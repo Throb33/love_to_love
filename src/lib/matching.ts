@@ -26,7 +26,7 @@ export const getRecommendations = async (
 ) => {
   const me = await prisma.user.findUnique({
     where: {id: userId},
-    include: {profile: true, preferences: true},
+    include: {profile: true, preferences: true, settings: true},
   });
 
   if (!me?.profile || !me.preferences || me.status !== 'APPROVED') {
@@ -65,11 +65,13 @@ export const getRecommendations = async (
     where: {
       status: 'APPROVED',
       id: {notIn: Array.from(excluded)},
+      OR: [{settings: null}, {settings: {visibleInRecommend: true}}],
       profile: {gender: targetGender},
     },
     include: {
       profile: true,
       preferences: true,
+      profilePhotos: {where: {status: 'APPROVED'}, orderBy: {createdAt: 'asc'}},
       reportsAgainst: {where: {status: 'OPEN'}},
     },
   });
@@ -135,7 +137,7 @@ export const getRecommendations = async (
       const profile = candidate.profile!;
       const age = ageFromBirthYear(profile.birthYear);
       const interests = parseList(profile.interests);
-      const photos = parseList(profile.photos);
+      const photos = candidate.profilePhotos.map((photo) => photo.url);
       const sharedInterests = interests.filter((item) => myInterests.includes(item));
       const profileCompleteness = [
         profile.heightCm,

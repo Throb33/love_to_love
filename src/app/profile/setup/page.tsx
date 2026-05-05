@@ -19,7 +19,10 @@ export default async function ProfileSetupPage() {
         bio: user.profile.bio,
         idealPartner: user.profile.idealPartner ?? '',
         avatarUrl: user.profile.avatarUrl,
-        photos: parseList(user.profile.photos).join(','),
+        photos:
+          user.profilePhotos.length > 0
+            ? user.profilePhotos.map((photo) => photo.url).join(',')
+            : parseList(user.profile.photos).join(','),
         interests: parseList(user.profile.interests).join(','),
         minAge: user.preferences?.minAge ?? 24,
         maxAge: user.preferences?.maxAge ?? 38,
@@ -28,6 +31,7 @@ export default async function ProfileSetupPage() {
         maxHeightCm: user.preferences?.maxHeightCm ?? 190,
         educationRequirement: user.preferences?.educationRequirement ?? '本科',
         maritalStatuses: parseList(user.preferences?.maritalStatuses).join(','),
+        visibleInRecommend: user.settings?.visibleInRecommend ?? true,
       }
     : undefined;
 

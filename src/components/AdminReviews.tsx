@@ -31,20 +31,22 @@ export function AdminReviews() {
   }, []);
 
   const approve = async (userId: string) => {
-    await fetch(`/api/admin/reviews/${userId}/approve`, {method: 'POST'});
-    setMessage('已通过');
+    const res = await fetch(`/api/admin/reviews/${userId}/approve`, {method: 'POST'});
+    const data = await res.json();
+    setMessage(res.ok ? '已通过' : data.error ?? '操作失败');
     load();
   };
 
   const reject = async (userId: string) => {
     const reason = window.prompt('请输入驳回原因', '资料不完整，请补充后重新提交');
     if (!reason) return;
-    await fetch(`/api/admin/reviews/${userId}/reject`, {
+    const res = await fetch(`/api/admin/reviews/${userId}/reject`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({reason}),
     });
-    setMessage('已驳回');
+    const data = await res.json();
+    setMessage(res.ok ? '已驳回' : data.error ?? '操作失败');
     load();
   };
 
@@ -61,20 +63,27 @@ export function AdminReviews() {
                 <div>
                   <h2>{user.profile.nickname}</h2>
                   <p className="subtle">
-                    {user.phone} · {user.profile.city} · {user.profile.education} ·{' '}
-                    {user.profile.occupation}
+                    {user.phone} · {user.profile.city} · {user.profile.education} · {user.profile.occupation}
                   </p>
                 </div>
               </div>
               <p>{user.profile.bio}</p>
               <div className="actions">
-                {user.profile.interests.map((tag) => <span className="tag" key={tag}>{tag}</span>)}
+                {user.profile.interests.map((tag) => (
+                  <span className="tag" key={tag}>
+                    {tag}
+                  </span>
+                ))}
               </div>
             </>
           ) : null}
           <div className="actions">
-            <button className="button" type="button" onClick={() => approve(user.id)}>通过</button>
-            <button className="button ghost" type="button" onClick={() => reject(user.id)}>驳回</button>
+            <button className="button" type="button" onClick={() => approve(user.id)}>
+              通过
+            </button>
+            <button className="button ghost" type="button" onClick={() => reject(user.id)}>
+              驳回
+            </button>
           </div>
         </article>
       ))}

@@ -42,7 +42,14 @@ const statusMessage = (status: string) => {
 export default async function MePage() {
   const user = await requireUser();
   const profile = user.profile;
-  const photos = profile ? parseList(profile.photos) : [];
+  const photos =
+    user.profilePhotos.length > 0
+      ? user.profilePhotos
+          .filter((photo) => photo.status === 'APPROVED')
+          .map((photo) => photo.url)
+      : profile
+        ? parseList(profile.photos)
+        : [];
   const notice = statusMessage(user.status);
 
   return (

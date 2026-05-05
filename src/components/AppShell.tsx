@@ -15,6 +15,7 @@ export async function AppShell({children}: {children: React.ReactNode}) {
             <>
               <Link href="/admin">后台概览</Link>
               <Link href="/admin/reviews">资料审核</Link>
+              <Link href="/admin/photos">照片审核</Link>
               <Link href="/admin/users">用户管理</Link>
               <Link href="/admin/reports">举报处理</Link>
             </>

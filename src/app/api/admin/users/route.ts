@@ -11,8 +11,21 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const status = url.searchParams.get('status') || undefined;
+  const q = url.searchParams.get('q')?.trim();
   const users = await prisma.user.findMany({
-    where: {role: 'USER', ...(status ? {status: status as never} : {})},
+    where: {
+      role: 'USER',
+      ...(status ? {status: status as never} : {}),
+      ...(q
+        ? {
+            OR: [
+              {phone: {contains: q}},
+              {profile: {nickname: {contains: q, mode: 'insensitive'}}},
+              {profile: {city: {contains: q, mode: 'insensitive'}}},
+            ],
+          }
+        : {}),
+    },
     include: {profile: true, reportsAgainst: true},
     orderBy: {createdAt: 'desc'},
     take: 100,

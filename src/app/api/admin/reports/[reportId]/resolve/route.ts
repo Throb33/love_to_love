@@ -5,7 +5,7 @@ export async function POST(
   request: Request,
   context: {params: Promise<{reportId: string}>},
 ) {
-  const {response} = await requireApiAdmin();
+  const {user: admin, response} = await requireApiAdmin();
 
   if (response) {
     return response;
@@ -26,11 +26,29 @@ export async function POST(
       where: {id: reportId},
       data: {status: 'RESOLVED', adminNote, resolvedAt: new Date()},
     }),
+    prisma.moderationLog.create({
+      data: {
+        actorId: admin.id,
+        targetUserId: report.reportedUserId,
+        action: 'REPORT_RESOLVED',
+        note: adminNote,
+        metadata: JSON.stringify({reportId, banUser}),
+      },
+    }),
     ...(banUser
       ? [
           prisma.user.update({
             where: {id: report.reportedUserId},
             data: {status: 'BANNED'},
+          }),
+          prisma.moderationLog.create({
+            data: {
+              actorId: admin.id,
+              targetUserId: report.reportedUserId,
+              action: 'USER_BANNED' as const,
+              note: `举报处理触发封禁：${adminNote}`,
+              metadata: JSON.stringify({reportId}),
+            },
           }),
         ]
       : []),
