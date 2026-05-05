@@ -19,6 +19,7 @@ export default async function ProfileSetupPage() {
         bio: user.profile.bio,
         idealPartner: user.profile.idealPartner ?? '',
         avatarUrl: user.profile.avatarUrl,
+        photos: parseList(user.profile.photos).join(','),
         interests: parseList(user.profile.interests).join(','),
         minAge: user.preferences?.minAge ?? 24,
         maxAge: user.preferences?.maxAge ?? 38,

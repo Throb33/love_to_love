@@ -1,6 +1,8 @@
 import {badRequest, forbidden, json, requireApiApprovedUser} from '@/lib/api';
 import {prisma} from '@/lib/prisma';
 
+const sensitiveWords = ['诈骗', '转账', '博彩', '裸聊', '贷款', '加群'];
+
 export async function GET(
   _request: Request,
   context: {params: Promise<{matchId: string}>},
@@ -18,13 +20,22 @@ export async function GET(
     return forbidden('无法查看该聊天');
   }
 
+  await prisma.message.updateMany({
+    where: {matchId, senderId: {not: user.id}, readAt: null},
+    data: {readAt: new Date()},
+  });
+
   const messages = await prisma.message.findMany({
     where: {matchId},
     orderBy: {createdAt: 'asc'},
     take: 30,
   });
 
-  return json({match, messages});
+  return json({
+    match,
+    otherUserId: match.userAId === user.id ? match.userBId : match.userAId,
+    messages,
+  });
 }
 
 export async function POST(
@@ -45,6 +56,10 @@ export async function POST(
     return badRequest('消息不能为空，且最多 500 字');
   }
 
+  if (sensitiveWords.some((word) => content.includes(word))) {
+    return badRequest('消息包含高风险词汇，请修改后再发送');
+  }
+
   const match = await prisma.match.findUnique({where: {id: matchId}});
 
   if (
@@ -53,6 +68,19 @@ export async function POST(
     (match.userAId !== user.id && match.userBId !== user.id)
   ) {
     return forbidden('只有有效匹配双方可以发送消息');
+  }
+
+  const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+  const recentCount = await prisma.message.count({
+    where: {
+      matchId,
+      senderId: user.id,
+      createdAt: {gte: oneMinuteAgo},
+    },
+  });
+
+  if (recentCount >= 10) {
+    return badRequest('发送过于频繁，请稍后再试');
   }
 
   const message = await prisma.message.create({

@@ -6,6 +6,7 @@ import Link from 'next/link';
 type Match = {
   id: string;
   status: 'ACTIVE' | 'CLOSED';
+  unreadCount: number;
   other: {
     id: string;
     nickname: string;
@@ -59,7 +60,12 @@ export function MatchesClient() {
                 <div className="profile-row">
                   <img className="avatar" src={match.other.avatarUrl} alt="" />
                   <div>
-                    <h2>{match.other.nickname}</h2>
+                    <h2>
+                      {match.other.nickname}
+                      {match.unreadCount > 0 ? (
+                        <span className="unread-badge">{match.unreadCount}</span>
+                      ) : null}
+                    </h2>
                     <p className="subtle">
                       {match.other.age} 岁 · {match.other.city} · {match.other.occupation}
                     </p>

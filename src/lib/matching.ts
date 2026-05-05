@@ -9,10 +9,21 @@ const educationRank: Record<string, number> = {
   博士: 5,
 };
 
+export type RecommendationFilters = {
+  minAge?: number;
+  maxAge?: number;
+  city?: string;
+  education?: string;
+  minHeightCm?: number;
+};
+
 export const normalizedPair = (left: string, right: string) =>
   [left, right].sort() as [string, string];
 
-export const getRecommendations = async (userId: string) => {
+export const getRecommendations = async (
+  userId: string,
+  filters: RecommendationFilters = {},
+) => {
   const me = await prisma.user.findUnique({
     where: {id: userId},
     include: {profile: true, preferences: true},
@@ -107,28 +118,47 @@ export const getRecommendations = async (userId: string) => {
           !me.profile!.maritalStatus ||
           candidateStatuses.includes(me.profile!.maritalStatus));
 
-      return matchesMine && matchesTheirs;
+      const matchesFilters =
+        (!filters.minAge || age >= filters.minAge) &&
+        (!filters.maxAge || age <= filters.maxAge) &&
+        (!filters.city || candidate.profile.city.includes(filters.city)) &&
+        (!filters.minHeightCm ||
+          !candidate.profile.heightCm ||
+          candidate.profile.heightCm >= filters.minHeightCm) &&
+        (!filters.education ||
+          (educationRank[candidate.profile.education] ?? 0) >=
+            (educationRank[filters.education] ?? 0));
+
+      return matchesMine && matchesTheirs && matchesFilters;
     })
     .map((candidate) => {
       const profile = candidate.profile!;
       const age = ageFromBirthYear(profile.birthYear);
       const interests = parseList(profile.interests);
-      const overlap = interests.filter((item) => myInterests.includes(item)).length;
+      const photos = parseList(profile.photos);
+      const sharedInterests = interests.filter((item) => myInterests.includes(item));
       const profileCompleteness = [
         profile.heightCm,
         profile.incomeRange,
         profile.maritalStatus,
         profile.idealPartner,
         profile.workRest,
+        photos.length > 0,
       ].filter(Boolean).length;
 
       let score = 0;
-      if (profile.city === me.profile!.city) score += 25;
+      const reasons: string[] = [];
+
+      if (profile.city === me.profile!.city) {
+        score += 25;
+        reasons.push('同城');
+      }
       if (
         age >= me.preferences!.minAge + 2 &&
         age <= Math.max(me.preferences!.maxAge - 2, me.preferences!.minAge)
       ) {
         score += 15;
+        reasons.push('年龄匹配');
       }
       if (
         me.preferences!.educationRequirement &&
@@ -136,19 +166,28 @@ export const getRecommendations = async (userId: string) => {
           (educationRank[me.preferences!.educationRequirement] ?? 0)
       ) {
         score += 15;
+        reasons.push('学历符合');
       }
-      score += Math.min(overlap * 5, 20);
+      if (sharedInterests.length > 0) {
+        score += Math.min(sharedInterests.length * 5, 20);
+        reasons.push(`共同兴趣：${sharedInterests.slice(0, 2).join('、')}`);
+      }
       if (Date.now() - candidate.lastActiveAt.getTime() < 1000 * 60 * 60 * 24 * 14) {
         score += 10;
+        reasons.push('近期活跃');
       }
       if (profileCompleteness >= 4) {
         score += 10;
+        reasons.push('资料完整');
       }
-      score -= candidate.reportsAgainst.length * 8;
+      if (candidate.reportsAgainst.length > 0) {
+        score -= candidate.reportsAgainst.length * 8;
+      }
 
       return {
         id: candidate.id,
         score,
+        reasons: reasons.slice(0, 4),
         age,
         profile: {
           nickname: profile.nickname,
@@ -158,6 +197,7 @@ export const getRecommendations = async (userId: string) => {
           education: profile.education,
           occupation: profile.occupation,
           avatarUrl: profile.avatarUrl,
+          photos,
           bio: profile.bio,
           idealPartner: profile.idealPartner,
           interests,

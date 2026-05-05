@@ -16,6 +16,7 @@ type ProfileState = {
   bio: string;
   idealPartner: string;
   avatarUrl: string;
+  photos: string;
   interests: string;
   minAge: number;
   maxAge: number;
@@ -24,6 +25,27 @@ type ProfileState = {
   maxHeightCm: number;
   educationRequirement: string;
   maritalStatuses: string;
+};
+
+const uploadImages = async (files: FileList | null) => {
+  if (!files || files.length === 0) {
+    return [];
+  }
+
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append('files', file));
+
+  const res = await fetch('/api/uploads', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error ?? '上传失败');
+  }
+
+  return data.urls as string[];
 };
 
 export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
@@ -41,6 +63,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
     bio: '',
     idealPartner: '',
     avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=Love',
+    photos: '',
     interests: '咖啡,电影,旅行',
     minAge: 24,
     maxAge: 38,
@@ -56,6 +79,44 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
 
   const update = (key: keyof ProfileState, value: string | number) => {
     setForm((current) => ({...current, [key]: value}));
+  };
+
+  const photoList = form.photos
+    .split(/[,\n，、]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  const uploadAvatar = async (files: FileList | null) => {
+    try {
+      setMessage('头像上传中...');
+      const urls = await uploadImages(files);
+      if (urls[0]) {
+        update('avatarUrl', urls[0]);
+        setMessage('头像已上传');
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '头像上传失败');
+    }
+  };
+
+  const uploadAlbum = async (files: FileList | null) => {
+    try {
+      setMessage('相册上传中...');
+      const urls = await uploadImages(files);
+      const nextPhotos = [...photoList, ...urls].slice(0, 6).join(',');
+      update('photos', nextPhotos);
+      setMessage('相册已更新');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '相册上传失败');
+    }
+  };
+
+  const removePhoto = (url: string) => {
+    update(
+      'photos',
+      photoList.filter((item) => item !== url).join(','),
+    );
   };
 
   const save = async () => {
@@ -137,8 +198,29 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
           <input value={form.interests} onChange={(e) => update('interests', e.target.value)} />
         </div>
         <div className="field full">
-          <label>头像 URL</label>
-          <input value={form.avatarUrl} onChange={(e) => update('avatarUrl', e.target.value)} />
+          <label>头像</label>
+          <div className="media-upload">
+            <img className="avatar large" src={form.avatarUrl} alt="" />
+            <div className="grid">
+              <input value={form.avatarUrl} onChange={(e) => update('avatarUrl', e.target.value)} />
+              <input accept="image/*" type="file" onChange={(e) => uploadAvatar(e.target.files)} />
+            </div>
+          </div>
+        </div>
+        <div className="field full">
+          <label>相册，最多 6 张</label>
+          <input accept="image/*" multiple type="file" onChange={(e) => uploadAlbum(e.target.files)} />
+          <input value={form.photos} onChange={(e) => update('photos', e.target.value)} placeholder="也可粘贴图片 URL，用逗号分隔" />
+          {photoList.length > 0 ? (
+            <div className="photo-grid">
+              {photoList.map((url) => (
+                <div className="photo-tile" key={url}>
+                  <img src={url} alt="" />
+                  <button type="button" onClick={() => removePhoto(url)}>移除</button>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="field full">
           <label>个人介绍</label>

@@ -217,6 +217,57 @@ textarea {
   border: 1px solid var(--line);
 }
 
+.avatar.large {
+  width: 112px;
+  height: 112px;
+}
+
+.media-upload {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.photo-grid img,
+.photo-tile img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.photo-tile {
+  position: relative;
+}
+
+.photo-tile button {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(30, 38, 56, 0.82);
+  color: #fff;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
 .profile-row {
   display: flex;
   gap: 16px;
@@ -233,6 +284,11 @@ textarea {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+}
+
+.tag.reason {
+  background: #e6f2ee;
+  color: var(--green);
 }
 
 .status {
@@ -273,6 +329,28 @@ textarea {
   background: #fce0e6;
 }
 
+.message small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  margin-left: 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  vertical-align: middle;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -290,7 +368,12 @@ textarea {
   .hero,
   .grid.two,
   .grid.three,
+  .filter-bar,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-upload {
     grid-template-columns: 1fr;
   }
 

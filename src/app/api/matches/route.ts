@@ -1,5 +1,5 @@
 import {json, requireApiApprovedUser} from '@/lib/api';
-import {parseList, ageFromBirthYear} from '@/lib/json';
+import {ageFromBirthYear, parseList} from '@/lib/json';
 import {prisma} from '@/lib/prisma';
 
 export async function GET() {
@@ -19,6 +19,17 @@ export async function GET() {
     orderBy: {createdAt: 'desc'},
   });
 
+  const unreadCounts = await prisma.message.groupBy({
+    by: ['matchId'],
+    where: {
+      senderId: {not: user.id},
+      readAt: null,
+      match: {OR: [{userAId: user.id}, {userBId: user.id}]},
+    },
+    _count: {_all: true},
+  });
+  const unreadByMatch = new Map(unreadCounts.map((item) => [item.matchId, item._count._all]));
+
   return json({
     matches: matches.map((match) => {
       const other = match.userAId === user.id ? match.userB : match.userA;
@@ -26,6 +37,7 @@ export async function GET() {
         id: match.id,
         status: match.status,
         createdAt: match.createdAt,
+        unreadCount: unreadByMatch.get(match.id) ?? 0,
         other: other.profile
           ? {
               id: other.id,

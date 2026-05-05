@@ -7,17 +7,20 @@ type Message = {
   senderId: string;
   content: string;
   createdAt: string;
+  readAt?: string | null;
 };
 
 export function ChatClient({matchId, currentUserId}: {matchId: string; currentUserId: string}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('');
+  const [otherUserId, setOtherUserId] = useState('');
 
   const load = async () => {
     const res = await fetch(`/api/matches/${matchId}/messages`);
     const data = await res.json();
     setMessages(data.messages ?? []);
+    setOtherUserId(data.otherUserId ?? '');
     if (!res.ok) setStatus(data.error ?? '加载失败');
   };
 
@@ -44,13 +47,39 @@ export function ChatClient({matchId, currentUserId}: {matchId: string; currentUs
     load();
   };
 
+  const report = async () => {
+    if (!otherUserId) return;
+    const description = window.prompt('请填写举报说明，管理员会看到该会话上下文');
+    if (!description) return;
+    const res = await fetch('/api/reports', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        reportedUserId: otherUserId,
+        matchId,
+        type: 'HARASSMENT',
+        description,
+      }),
+    });
+    const data = await res.json();
+    setStatus(res.ok ? '举报已提交' : data.error ?? '举报失败');
+  };
+
   return (
     <div className="grid">
+      <div className="actions">
+        <button className="button ghost" type="button" onClick={report}>
+          举报聊天对象
+        </button>
+      </div>
       <div className="chat-box">
         {messages.length === 0 ? <p className="subtle">还没有消息，先打个招呼。</p> : null}
         {messages.map((message) => (
           <div className={`message ${message.senderId === currentUserId ? 'mine' : ''}`} key={message.id}>
             {message.content}
+            {message.senderId === currentUserId ? (
+              <small>{message.readAt ? '已读' : '未读'}</small>
+            ) : null}
           </div>
         ))}
       </div>
@@ -65,7 +94,7 @@ export function ChatClient({matchId, currentUserId}: {matchId: string; currentUs
           发送
         </button>
       </form>
-      {status ? <p className="error">{status}</p> : null}
+      {status ? <p className={status.includes('失败') ? 'error' : 'status'}>{status}</p> : null}
     </div>
   );
 }

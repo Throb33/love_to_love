@@ -6,6 +6,7 @@ import {ageFromBirthYear, parseList} from '@/lib/json';
 export default async function MePage() {
   const user = await requireUser();
   const profile = user.profile;
+  const photos = profile ? parseList(profile.photos) : [];
 
   return (
     <AppShell>
@@ -19,14 +20,26 @@ export default async function MePage() {
               <div>
                 <h2>{profile.nickname}</h2>
                 <p className="subtle">
-                  {ageFromBirthYear(profile.birthYear)} 岁 · {profile.city} · {profile.education} · {profile.occupation}
+                  {ageFromBirthYear(profile.birthYear)} 岁 · {profile.city} ·{' '}
+                  {profile.education} · {profile.occupation}
                 </p>
               </div>
             </div>
             <p>{profile.bio}</p>
             <div className="actions">
-              {parseList(profile.interests).map((tag) => <span className="tag" key={tag}>{tag}</span>)}
+              {parseList(profile.interests).map((tag) => (
+                <span className="tag" key={tag}>
+                  {tag}
+                </span>
+              ))}
             </div>
+            {photos.length > 0 ? (
+              <div className="photo-grid">
+                {photos.map((url) => (
+                  <img src={url} alt="" key={url} />
+                ))}
+              </div>
+            ) : null}
           </>
         ) : (
           <p className="subtle">尚未填写资料。</p>
