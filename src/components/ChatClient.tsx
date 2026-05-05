@@ -15,12 +15,23 @@ type ChatUser = {
   id: string;
   nickname: string;
   avatarUrl: string;
+  age?: number;
+  city?: string;
+  interests?: string[];
+  sharedInterests?: string[];
+  compatibilityScore?: number;
 };
 
 type PendingMessage = {
   content: string;
   error?: string;
 };
+
+const topicPrompts = [
+  {label: '聊聊兴趣', text: '看到我们有共同兴趣，平时你最常做的是哪一个？'},
+  {label: '周末计划', text: '你周末一般喜欢怎么安排？'},
+  {label: '理想关系', text: '你理想中的相处状态是什么样的？'},
+];
 
 export function ChatClient({
   matchId,
@@ -128,27 +139,42 @@ export function ChatClient({
 
   const avatarFor = (senderId: string) =>
     senderId === currentUserId ? currentUserAvatar : otherUser?.avatarUrl;
+  const sharedInterests = otherUser?.sharedInterests?.length
+    ? otherUser.sharedInterests.slice(0, 2)
+    : otherUser?.interests?.slice(0, 2) ?? [];
 
   return (
-    <section className="wechat-chat">
-      <header className="wechat-header">
-        <Link className="wechat-back" href="/matches">
-          返回
+    <section className="dating-chat">
+      <header className="dating-chat-header">
+        <Link className="icon-link" href="/matches" aria-label="返回匹配列表">
+          ‹
         </Link>
-        <div className="wechat-peer">
-          {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} alt="" /> : <span />}
+        <div className="dating-peer">
+          <Avatar className="dating-peer-avatar" src={otherUser?.avatarUrl} />
           <div>
-            <strong>{otherUser?.nickname ?? '站内聊天'}</strong>
-            <small>{canSend ? '匹配后可聊天' : '匹配已解除'}</small>
+            <strong>{otherUser?.nickname ?? '聊天对象'}</strong>
+            <span>
+              {otherUser?.age ? `${otherUser.age} 岁` : '已匹配'}
+              {otherUser?.city ? ` · ${otherUser.city}` : ''}
+            </span>
           </div>
         </div>
-        <button className="wechat-report" type="button" onClick={() => setShowReportForm((value) => !value)}>
-          举报
+        <button className="icon-button" type="button" onClick={() => setShowReportForm((value) => !value)} aria-label="更多">
+          ⋯
         </button>
       </header>
 
+      <div className="match-insight">
+        <div>
+          <span>匹配度</span>
+          <strong>{otherUser?.compatibilityScore ?? 86}</strong>
+        </div>
+        <p>共同兴趣：{sharedInterests.length > 0 ? sharedInterests.join('、') : '认真生活、真诚沟通'}</p>
+        <em>已通过资料审核</em>
+      </div>
+
       {showReportForm ? (
-        <form className="wechat-report-form" onSubmit={submitReport}>
+        <form className="dating-report-form" onSubmit={submitReport}>
           <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
             <option value="HARASSMENT">骚扰辱骂</option>
             <option value="FAKE_PROFILE">虚假资料</option>
@@ -175,29 +201,44 @@ export function ChatClient({
         </form>
       ) : null}
 
-      <div className="wechat-thread" ref={threadRef}>
+      <div className="dating-thread" ref={threadRef}>
         {hasMore ? (
-          <button className="wechat-load-more" type="button" onClick={() => load('prepend')}>
+          <button className="thread-load-more" type="button" onClick={() => load('prepend')}>
             查看更早消息
           </button>
         ) : null}
-        {messages.length === 0 ? <p className="wechat-empty">还没有消息，先打个招呼。</p> : null}
-        {messages.map((message) => {
+        {messages.length === 0 ? <p className="thread-empty">还没有消息，先打个招呼。</p> : null}
+        {messages.map((message, index) => {
           const isMine = message.senderId === currentUserId;
+          const shouldShowTopics = index === 1 && messages.length > 2;
+
           return (
-            <div className={`wechat-row ${isMine ? 'mine' : ''}`} key={message.id}>
-              {!isMine ? <Avatar src={avatarFor(message.senderId)} /> : null}
-              <div className="wechat-bubble">
-                <p>{message.content}</p>
-                {isMine ? <small>{message.readAt ? '已读' : '未读'}</small> : null}
-              </div>
-              {isMine ? <Avatar src={avatarFor(message.senderId)} /> : null}
+            <div key={message.id}>
+              <MessageRow
+                avatarUrl={avatarFor(message.senderId)}
+                isMine={isMine}
+                message={message}
+              />
+              {shouldShowTopics ? (
+                <div className="icebreakers">
+                  {topicPrompts.map((topic) => (
+                    <button
+                      disabled={!canSend}
+                      key={topic.label}
+                      type="button"
+                      onClick={() => setContent(topic.text)}
+                    >
+                      {topic.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           );
         })}
         {pending ? (
-          <div className="wechat-row mine">
-            <div className="wechat-bubble pending">
+          <div className="dating-message-row mine">
+            <div className="dating-bubble pending">
               <p>{pending.content}</p>
               <small>
                 {pending.error ? (
@@ -212,20 +253,23 @@ export function ChatClient({
                 )}
               </small>
             </div>
-            <Avatar src={currentUserAvatar} />
+            <Avatar className="dating-avatar" src={currentUserAvatar} />
           </div>
         ) : null}
       </div>
 
-      <form className="wechat-inputbar" onSubmit={send}>
+      <form className="dating-inputbar" onSubmit={send}>
+        <button className="input-plus" disabled={!canSend} type="button" aria-label="更多输入方式">
+          +
+        </button>
         <input
           disabled={!canSend}
           maxLength={500}
-          placeholder={canSend ? '输入消息' : '匹配已解除，不能继续发送消息'}
+          placeholder={canSend ? '说点什么...' : '匹配已解除，不能继续发送消息'}
           value={content}
           onChange={(event) => setContent(event.target.value)}
         />
-        <button disabled={sending || !canSend || !content.trim()} type="submit">
+        <button className="send-button" disabled={sending || !canSend || !content.trim()} type="submit">
           发送
         </button>
       </form>
@@ -234,6 +278,27 @@ export function ChatClient({
   );
 }
 
-function Avatar({src}: {src?: string}) {
-  return src ? <img className="wechat-avatar" src={src} alt="" /> : <span className="wechat-avatar" />;
+function MessageRow({
+  avatarUrl,
+  isMine,
+  message,
+}: {
+  avatarUrl?: string;
+  isMine: boolean;
+  message: Message;
+}) {
+  return (
+    <div className={`dating-message-row ${isMine ? 'mine' : ''}`}>
+      {!isMine ? <Avatar className="dating-avatar" src={avatarUrl} /> : null}
+      <div className="dating-bubble">
+        <p>{message.content}</p>
+        {isMine ? <small>{message.readAt ? '已读' : '未读'}</small> : null}
+      </div>
+      {isMine ? <Avatar className="dating-avatar" src={avatarUrl} /> : null}
+    </div>
+  );
+}
+
+function Avatar({src, className}: {src?: string; className: string}) {
+  return src ? <img className={className} src={src} alt="" /> : <span className={className} />;
 }

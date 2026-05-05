@@ -1,4 +1,5 @@
 import {badRequest, forbidden, json, requireApiApprovedUser} from '@/lib/api';
+import {ageFromBirthYear, parseList} from '@/lib/json';
 import {prisma} from '@/lib/prisma';
 
 const sensitiveWords = ['诈骗', '转账', '博彩', '裸聊', '贷款', '加群'];
@@ -42,8 +43,14 @@ export async function GET(
     take: 30,
   });
   const messages = rows.reverse();
-
   const other = match.userAId === user.id ? match.userB : match.userA;
+  const myInterests = parseList(user.profile?.interests);
+  const otherInterests = parseList(other.profile?.interests);
+  const sharedInterests = otherInterests.filter((interest) => myInterests.includes(interest));
+  const compatibilityScore = Math.min(
+    96,
+    76 + sharedInterests.length * 5 + (user.profile?.city === other.profile?.city ? 5 : 0),
+  );
 
   return json({
     match,
@@ -53,8 +60,20 @@ export async function GET(
           id: other.id,
           nickname: other.profile.nickname,
           avatarUrl: other.profile.avatarUrl,
+          age: ageFromBirthYear(other.profile.birthYear),
+          city: other.profile.city,
+          interests: otherInterests,
+          sharedInterests,
+          compatibilityScore,
         }
-      : {id: other.id, nickname: '聊天对象', avatarUrl: ''},
+      : {
+          id: other.id,
+          nickname: '聊天对象',
+          avatarUrl: '',
+          interests: [],
+          sharedInterests: [],
+          compatibilityScore,
+        },
     canSend: match.status === 'ACTIVE',
     hasMore: rows.length === 30,
     messages,
