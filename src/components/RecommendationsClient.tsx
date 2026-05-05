@@ -30,6 +30,21 @@ type Filters = {
   minHeightCm: string;
 };
 
+const cityOptions = ['上海', '北京', '深圳', '广州', '杭州', '南京', '苏州', '成都', '武汉'];
+
+const clampFilter = (filters: Filters): Filters => {
+  const minAge = filters.minAge ? Math.max(18, Number(filters.minAge)) : '';
+  const maxAge = filters.maxAge ? Math.min(80, Number(filters.maxAge)) : '';
+  const minHeightCm = filters.minHeightCm ? Math.max(120, Number(filters.minHeightCm)) : '';
+
+  return {
+    ...filters,
+    minAge: minAge ? String(minAge) : '',
+    maxAge: maxAge ? String(maxAge) : '',
+    minHeightCm: minHeightCm ? String(minHeightCm) : '',
+  };
+};
+
 export function RecommendationsClient() {
   const [items, setItems] = useState<Recommendation[]>([]);
   const [message, setMessage] = useState('');
@@ -42,14 +57,22 @@ export function RecommendationsClient() {
   });
 
   const load = async (nextFilters = filters) => {
+    const normalized = clampFilter(nextFilters);
+    setFilters(normalized);
+
+    if (normalized.minAge && normalized.maxAge && Number(normalized.minAge) > Number(normalized.maxAge)) {
+      setMessage('最小年龄不能大于最大年龄');
+      return;
+    }
+
     const params = new URLSearchParams();
-    Object.entries(nextFilters).forEach(([key, value]) => {
+    Object.entries(normalized).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
     const res = await fetch(`/api/recommendations?${params.toString()}`);
     const data = await res.json();
     setItems(data.recommendations ?? []);
-    if (!res.ok) setMessage(data.error ?? '加载失败');
+    setMessage(res.ok ? '' : data.error ?? '加载失败');
   };
 
   useEffect(() => {
@@ -90,15 +113,34 @@ export function RecommendationsClient() {
       <div className="panel filter-bar">
         <div className="field">
           <label>最小年龄</label>
-          <input type="number" value={filters.minAge} onChange={(e) => updateFilter('minAge', e.target.value)} />
+          <input
+            min={18}
+            max={80}
+            placeholder="18"
+            type="number"
+            value={filters.minAge}
+            onChange={(e) => updateFilter('minAge', e.target.value)}
+          />
         </div>
         <div className="field">
           <label>最大年龄</label>
-          <input type="number" value={filters.maxAge} onChange={(e) => updateFilter('maxAge', e.target.value)} />
+          <input
+            min={18}
+            max={80}
+            placeholder="40"
+            type="number"
+            value={filters.maxAge}
+            onChange={(e) => updateFilter('maxAge', e.target.value)}
+          />
         </div>
         <div className="field">
           <label>城市</label>
-          <input value={filters.city} onChange={(e) => updateFilter('city', e.target.value)} />
+          <select value={filters.city} onChange={(e) => updateFilter('city', e.target.value)}>
+            <option value="">不限</option>
+            {cityOptions.map((city) => (
+              <option key={city}>{city}</option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label>学历不低于</label>
@@ -112,7 +154,14 @@ export function RecommendationsClient() {
         </div>
         <div className="field">
           <label>最小身高</label>
-          <input type="number" value={filters.minHeightCm} onChange={(e) => updateFilter('minHeightCm', e.target.value)} />
+          <input
+            min={120}
+            max={230}
+            placeholder="155"
+            type="number"
+            value={filters.minHeightCm}
+            onChange={(e) => updateFilter('minHeightCm', e.target.value)}
+          />
         </div>
         <button className="button" type="button" onClick={() => load()}>
           应用筛选
@@ -126,7 +175,7 @@ export function RecommendationsClient() {
           查看匹配
         </Link>
       </div>
-      {message ? <p className="status">{message}</p> : null}
+      {message ? <p className={message.includes('不能') ? 'error' : 'status'}>{message}</p> : null}
       {items.length === 0 ? (
         <div className="panel">
           <h2>暂无推荐</h2>

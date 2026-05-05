@@ -15,6 +15,9 @@ export function ChatClient({matchId, currentUserId}: {matchId: string; currentUs
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('');
   const [otherUserId, setOtherUserId] = useState('');
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [reportType, setReportType] = useState('HARASSMENT');
+  const [reportDescription, setReportDescription] = useState('');
 
   const load = async () => {
     const res = await fetch(`/api/matches/${matchId}/messages`);
@@ -47,31 +50,73 @@ export function ChatClient({matchId, currentUserId}: {matchId: string; currentUs
     load();
   };
 
-  const report = async () => {
+  const submitReport = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!otherUserId) return;
-    const description = window.prompt('请填写举报说明，管理员会看到该会话上下文');
-    if (!description) return;
+
     const res = await fetch('/api/reports', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         reportedUserId: otherUserId,
         matchId,
-        type: 'HARASSMENT',
-        description,
+        type: reportType,
+        description: reportDescription,
       }),
     });
     const data = await res.json();
-    setStatus(res.ok ? '举报已提交' : data.error ?? '举报失败');
+    if (!res.ok) {
+      setStatus(data.error ?? '举报失败');
+      return;
+    }
+
+    setReportDescription('');
+    setShowReportForm(false);
+    setStatus('举报已提交');
   };
 
   return (
     <div className="grid">
       <div className="actions">
-        <button className="button ghost" type="button" onClick={report}>
+        <button className="button ghost" type="button" onClick={() => setShowReportForm((value) => !value)}>
           举报聊天对象
         </button>
       </div>
+      {showReportForm ? (
+        <form className="panel grid" onSubmit={submitReport}>
+          <div className="form-grid">
+            <div className="field">
+              <label>举报类型</label>
+              <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+                <option value="HARASSMENT">骚扰辱骂</option>
+                <option value="FAKE_PROFILE">虚假资料</option>
+                <option value="ADVERTISING">广告营销</option>
+                <option value="FRAUD_RISK">诈骗风险</option>
+                <option value="OTHER">其他</option>
+              </select>
+            </div>
+            <div className="field full">
+              <label>举报说明</label>
+              <textarea
+                minLength={5}
+                maxLength={300}
+                required
+                placeholder="请说明具体问题，管理员会结合该聊天上下文处理。"
+                value={reportDescription}
+                onChange={(event) => setReportDescription(event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="actions">
+            <button className="button danger" type="submit">
+              提交举报
+            </button>
+            <button className="button ghost" type="button" onClick={() => setShowReportForm(false)}>
+              取消
+            </button>
+          </div>
+        </form>
+      ) : null}
       <div className="chat-box">
         {messages.length === 0 ? <p className="subtle">还没有消息，先打个招呼。</p> : null}
         {messages.map((message) => (

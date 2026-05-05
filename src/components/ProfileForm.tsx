@@ -27,6 +27,12 @@ type ProfileState = {
   maritalStatuses: string;
 };
 
+const splitList = (value: string) =>
+  value
+    .split(/[,\n，、]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 const uploadImages = async (files: FileList | null) => {
   if (!files || files.length === 0) {
     return [];
@@ -81,11 +87,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
     setForm((current) => ({...current, [key]: value}));
   };
 
-  const photoList = form.photos
-    .split(/[,\n，、]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 6);
+  const photoList = splitList(form.photos).slice(0, 6);
 
   const uploadAvatar = async (files: FileList | null) => {
     try {
@@ -93,7 +95,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       const urls = await uploadImages(files);
       if (urls[0]) {
         update('avatarUrl', urls[0]);
-        setMessage('头像已上传');
+        setMessage('头像已上传，保存后将进入管理员审核');
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '头像上传失败');
@@ -106,7 +108,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       const urls = await uploadImages(files);
       const nextPhotos = [...photoList, ...urls].slice(0, 6).join(',');
       update('photos', nextPhotos);
-      setMessage('相册已更新');
+      setMessage('相册已更新，保存后将进入管理员审核');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '相册上传失败');
     }
@@ -117,6 +119,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
       'photos',
       photoList.filter((item) => item !== url).join(','),
     );
+    setMessage('相册已修改，保存后将进入管理员审核');
   };
 
   const save = async () => {
@@ -129,7 +132,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
     });
     const data = await res.json();
     setSaving(false);
-    setMessage(res.ok ? '资料已保存' : data.error ?? '保存失败');
+    setMessage(res.ok ? data.message ?? '资料已保存' : data.error ?? '保存失败');
     return res.ok;
   };
 
@@ -211,6 +214,7 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
           <label>相册，最多 6 张</label>
           <input accept="image/*" multiple type="file" onChange={(e) => uploadAlbum(e.target.files)} />
           <input value={form.photos} onChange={(e) => update('photos', e.target.value)} placeholder="也可粘贴图片 URL，用逗号分隔" />
+          <p className="subtle">相册属于展示资料，保存后需要管理员重新审核。</p>
           {photoList.length > 0 ? (
             <div className="photo-grid">
               {photoList.map((url) => (
@@ -232,11 +236,11 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
         </div>
         <div className="field">
           <label>偏好最小年龄</label>
-          <input type="number" value={form.minAge} onChange={(e) => update('minAge', Number(e.target.value))} />
+          <input min={18} max={80} type="number" value={form.minAge} onChange={(e) => update('minAge', Number(e.target.value))} />
         </div>
         <div className="field">
           <label>偏好最大年龄</label>
-          <input type="number" value={form.maxAge} onChange={(e) => update('maxAge', Number(e.target.value))} />
+          <input min={18} max={80} type="number" value={form.maxAge} onChange={(e) => update('maxAge', Number(e.target.value))} />
         </div>
         <div className="field">
           <label>偏好城市</label>
@@ -253,11 +257,11 @@ export function ProfileForm({initial}: {initial?: Partial<ProfileState>}) {
         </div>
         <div className="field">
           <label>偏好最小身高</label>
-          <input type="number" value={form.minHeightCm} onChange={(e) => update('minHeightCm', Number(e.target.value))} />
+          <input min={120} max={230} type="number" value={form.minHeightCm} onChange={(e) => update('minHeightCm', Number(e.target.value))} />
         </div>
         <div className="field">
           <label>偏好最大身高</label>
-          <input type="number" value={form.maxHeightCm} onChange={(e) => update('maxHeightCm', Number(e.target.value))} />
+          <input min={120} max={230} type="number" value={form.maxHeightCm} onChange={(e) => update('maxHeightCm', Number(e.target.value))} />
         </div>
         <div className="field full">
           <label>可接受婚姻状态</label>
