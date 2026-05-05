@@ -14,7 +14,13 @@ export async function GET(
   }
 
   const {matchId} = await context.params;
-  const match = await prisma.match.findUnique({where: {id: matchId}});
+  const match = await prisma.match.findUnique({
+    where: {id: matchId},
+    include: {
+      userA: {include: {profile: true}},
+      userB: {include: {profile: true}},
+    },
+  });
 
   if (!match || (match.userAId !== user.id && match.userBId !== user.id)) {
     return forbidden('无法查看该聊天');
@@ -37,9 +43,18 @@ export async function GET(
   });
   const messages = rows.reverse();
 
+  const other = match.userAId === user.id ? match.userB : match.userA;
+
   return json({
     match,
-    otherUserId: match.userAId === user.id ? match.userBId : match.userAId,
+    otherUserId: other.id,
+    otherUser: other.profile
+      ? {
+          id: other.id,
+          nickname: other.profile.nickname,
+          avatarUrl: other.profile.avatarUrl,
+        }
+      : {id: other.id, nickname: '聊天对象', avatarUrl: ''},
     canSend: match.status === 'ACTIVE',
     hasMore: rows.length === 30,
     messages,

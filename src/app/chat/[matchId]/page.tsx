@@ -8,8 +8,7 @@ export default async function ChatPage({params}: {params: Promise<{matchId: stri
 
   return (
     <AppShell>
-      <h1>站内聊天</h1>
-      <ChatClient currentUserId={user.id} matchId={matchId} />
+      <ChatClient currentUserAvatar={user.profile?.avatarUrl} currentUserId={user.id} matchId={matchId} />
     </AppShell>
   );
 }
