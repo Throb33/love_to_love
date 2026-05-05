@@ -16,11 +16,12 @@ export default async function LoginPage() {
 
   return (
     <AppShell>
-      <div className="grid two">
-        <div>
+      <div className="split-page">
+        <section className="intro-panel">
+          <span className="eyebrow">实名资料 · 人工审核 · 站内聊天</span>
           <h1>登录 Love to Love</h1>
-          <p className="subtle">开发环境使用固定验证码，方便快速体验完整 MVP 流程。</p>
-        </div>
+          <p className="subtle">用手机号验证码进入平台，完善资料并通过审核后即可查看推荐。</p>
+        </section>
         <LoginForm />
       </div>
     </AppShell>

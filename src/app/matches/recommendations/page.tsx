@@ -7,8 +7,11 @@ export default async function RecommendationsPage() {
 
   return (
     <AppShell>
-      <h1>今日推荐</h1>
-      <p className="subtle">系统会排除未审核、已跳过、已匹配和不符合双方基础偏好的用户。</p>
+      <div className="page-heading">
+        <span className="eyebrow">Today</span>
+        <h1>今日推荐</h1>
+        <p className="subtle">系统会排除未审核、已跳过、已匹配和不符合双方基础偏好的用户。</p>
+      </div>
       <RecommendationsClient />
     </AppShell>
   );

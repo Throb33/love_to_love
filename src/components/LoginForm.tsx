@@ -1,7 +1,7 @@
 'use client';
 
-import {useState} from 'react';
 import {useRouter} from 'next/navigation';
+import {useState} from 'react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -74,9 +74,7 @@ export function LoginForm() {
         </button>
       </div>
       {message ? <p className="subtle">{message}</p> : null}
-      <p className="subtle">
-        管理员账号：19999999999。开发环境使用 console 短信 provider 时，验证码会显示在这里并自动填入。
-      </p>
+      <p className="subtle">管理员账号：19999999999。开发环境使用 console 短信 provider 时，验证码会自动填入。</p>
     </form>
   );
 }

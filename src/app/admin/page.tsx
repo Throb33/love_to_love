@@ -7,7 +7,10 @@ export default async function AdminPage() {
 
   return (
     <AppShell>
-      <h1>后台概览</h1>
+      <div className="page-heading">
+        <span className="eyebrow">Operations</span>
+        <h1>后台概览</h1>
+      </div>
       <AdminDashboard />
     </AppShell>
   );
