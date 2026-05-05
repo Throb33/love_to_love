@@ -1,4 +1,3 @@
-import {AppShell} from '@/components/AppShell';
 import {ChatClient} from '@/components/ChatClient';
 import {requireApprovedUser} from '@/lib/auth';
 
@@ -7,8 +6,8 @@ export default async function ChatPage({params}: {params: Promise<{matchId: stri
   const {matchId} = await params;
 
   return (
-    <AppShell>
+    <main className="chat-page">
       <ChatClient currentUserAvatar={user.profile?.avatarUrl} currentUserId={user.id} matchId={matchId} />
-    </AppShell>
+    </main>
   );
 }

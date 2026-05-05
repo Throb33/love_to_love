@@ -8,7 +8,6 @@ type Message = {
   senderId: string;
   content: string;
   createdAt: string;
-  readAt?: string | null;
 };
 
 type ChatUser = {
@@ -171,30 +170,34 @@ export function ChatClient({
 
   return (
     <section className="dating-chat">
-      <div className="match-insight chat-profile-top">
-        <Link className="icon-link compact" href="/matches" aria-label="返回匹配列表">
-          ‹
-        </Link>
-        <button className="profile-summary" type="button" onClick={() => setShowProfile(true)}>
-          <Avatar className="dating-peer-avatar" src={otherUser?.avatarUrl} />
-          <span>
-            <strong>{otherUser?.nickname ?? '聊天对象'}</strong>
-            <em>
-              {otherUser?.age ? `${otherUser.age} 岁` : '已匹配'}
-              {otherUser?.city ? ` · ${otherUser.city}` : ''}
-            </em>
-          </span>
-        </button>
-        <button className="icon-button compact" type="button" onClick={() => setShowReportForm((value) => !value)}>
-          ⋯
-        </button>
-        <div className="match-score-pill">
-          <span>匹配度</span>
-          <strong>{otherUser?.compatibilityScore ?? 86}</strong>
+      <header className="chat-top-card">
+        <div className="chat-top-main">
+          <Link className="chat-back" href="/matches" aria-label="返回匹配列表">
+            ‹
+          </Link>
+          <button className="chat-person" type="button" onClick={() => setShowProfile(true)}>
+            <Avatar className="chat-person-avatar" src={otherUser?.avatarUrl} />
+            <span>
+              <strong>{otherUser?.nickname ?? '聊天对象'}</strong>
+              <em>
+                {otherUser?.age ? `${otherUser.age} 岁` : '已匹配'}
+                {otherUser?.city ? ` · ${otherUser.city}` : ''}
+              </em>
+            </span>
+          </button>
+          <button className="chat-more" type="button" onClick={() => setShowReportForm((value) => !value)} aria-label="更多">
+            ⋯
+          </button>
         </div>
-        <p>共同兴趣：{sharedInterests.length > 0 ? sharedInterests.join('、') : '认真生活、真诚沟通'}</p>
-        <em className="verified-pill">已通过资料审核</em>
-      </div>
+        <div className="chat-match-row">
+          <span className="chat-score">
+            <b>{otherUser?.compatibilityScore ?? 86}</b>
+            匹配度
+          </span>
+          <span className="chat-shared">共同兴趣：{sharedInterests.length > 0 ? sharedInterests.join('、') : '认真生活'}</span>
+          <span className="chat-verified">已审核</span>
+        </div>
+      </header>
 
       {showProfile ? (
         <div className="profile-popover">
@@ -301,18 +304,14 @@ export function ChatClient({
           <div className="dating-message-row mine">
             <div className="dating-bubble pending">
               <p>{pending.content}</p>
-              <small>
-                {pending.error ? (
-                  <>
-                    {pending.error}
-                    <button className="inline-action" type="button" onClick={() => sendContent(pending.content)}>
-                      重试
-                    </button>
-                  </>
-                ) : (
-                  '发送中...'
-                )}
-              </small>
+              {pending.error ? (
+                <small>
+                  {pending.error}
+                  <button className="inline-action" type="button" onClick={() => sendContent(pending.content)}>
+                    重试
+                  </button>
+                </small>
+              ) : null}
             </div>
             <Avatar className="dating-avatar" src={currentUserAvatar} />
           </div>
@@ -355,7 +354,6 @@ function MessageRow({
       {!isMine ? <AvatarButton src={avatarUrl} onClick={onAvatarClick} /> : null}
       <div className="dating-bubble">
         <p>{message.content}</p>
-        {isMine ? <small>{message.readAt ? '已读' : '未读'}</small> : null}
       </div>
       {isMine ? <Avatar className="dating-avatar" src={avatarUrl} /> : null}
     </div>
