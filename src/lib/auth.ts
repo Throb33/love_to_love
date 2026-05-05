@@ -3,7 +3,6 @@ import {redirect} from 'next/navigation';
 import {prisma} from './prisma';
 
 export const SESSION_COOKIE = 'love_to_love_session';
-export const FIXED_CODE = '123456';
 export const ADMIN_PHONE = '19999999999';
 
 export const getSessionUserId = async () => {

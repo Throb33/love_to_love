@@ -1,19 +1,18 @@
 import {NextResponse} from 'next/server';
-import {ADMIN_PHONE, FIXED_CODE, SESSION_COOKIE, statusPath} from '@/lib/auth';
+import {ADMIN_PHONE, SESSION_COOKIE, statusPath} from '@/lib/auth';
 import {badRequest} from '@/lib/api';
 import {prisma} from '@/lib/prisma';
+import {verifyLoginSmsCode} from '@/lib/sms';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const phone = String(body.phone ?? '').trim();
   const code = String(body.code ?? '').trim();
 
-  if (!/^1\d{10}$/.test(phone)) {
-    return badRequest('请输入有效的中国大陆手机号');
-  }
+  const verification = await verifyLoginSmsCode(phone, code);
 
-  if (code !== FIXED_CODE) {
-    return badRequest('验证码错误，开发环境请使用 123456');
+  if (!verification.ok) {
+    return badRequest(verification.error);
   }
 
   const isAdmin = phone === ADMIN_PHONE;

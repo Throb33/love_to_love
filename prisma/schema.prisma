@@ -70,6 +70,22 @@ model User {
   reviewsTarget  ReviewRecord[]      @relation("ReviewedUser")
 }
 
+model SmsVerificationCode {
+  id                String    @id @default(cuid())
+  phone             String
+  purpose           String
+  codeHash          String
+  sendProvider      String
+  providerMessageId String?
+  attempts          Int       @default(0)
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([phone, purpose, createdAt])
+  @@index([phone, purpose, consumedAt])
+}
+
 model Profile {
   userId           String   @id
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -1,13 +1,27 @@
-import {FIXED_CODE} from '@/lib/auth';
 import {badRequest, json} from '@/lib/api';
+import {requestLoginSmsCode} from '@/lib/sms';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const phone = String(body.phone ?? '').trim();
 
-  if (!/^1\d{10}$/.test(phone)) {
-    return badRequest('请输入有效的中国大陆手机号');
-  }
+  try {
+    const result = await requestLoginSmsCode(phone);
 
-  return json({ok: true, code: FIXED_CODE, message: '开发环境固定验证码为 123456'});
+    if (!result.ok) {
+      return badRequest(result.error);
+    }
+
+    return json({
+      ok: true,
+      expiresAt: result.expiresAt,
+      devCode: result.devCode,
+      message: result.devCode
+        ? `开发环境验证码：${result.devCode}`
+        : '验证码已发送，请注意查收短信',
+    });
+  } catch (error) {
+    console.error(error);
+    return json({error: '短信发送失败，请稍后再试'}, {status: 502});
+  }
 }
