@@ -1,7 +1,7 @@
 'use client';
 
-import {useEffect, useState} from 'react';
 import Link from 'next/link';
+import {useEffect, useState} from 'react';
 
 type Recommendation = {
   id: string;
@@ -69,6 +69,7 @@ export function RecommendationsClient() {
     Object.entries(normalized).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
+
     const res = await fetch(`/api/recommendations?${params.toString()}`);
     const data = await res.json();
     setItems(data.recommendations ?? []);
@@ -99,6 +100,7 @@ export function RecommendationsClient() {
   const report = async (userId: string) => {
     const description = window.prompt('请填写举报说明');
     if (!description) return;
+
     const res = await fetch('/api/reports', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -119,7 +121,7 @@ export function RecommendationsClient() {
             placeholder="18"
             type="number"
             value={filters.minAge}
-            onChange={(e) => updateFilter('minAge', e.target.value)}
+            onChange={(event) => updateFilter('minAge', event.target.value)}
           />
         </div>
         <div className="field">
@@ -130,12 +132,12 @@ export function RecommendationsClient() {
             placeholder="40"
             type="number"
             value={filters.maxAge}
-            onChange={(e) => updateFilter('maxAge', e.target.value)}
+            onChange={(event) => updateFilter('maxAge', event.target.value)}
           />
         </div>
         <div className="field">
           <label>城市</label>
-          <select value={filters.city} onChange={(e) => updateFilter('city', e.target.value)}>
+          <select value={filters.city} onChange={(event) => updateFilter('city', event.target.value)}>
             <option value="">不限</option>
             {cityOptions.map((city) => (
               <option key={city}>{city}</option>
@@ -144,7 +146,7 @@ export function RecommendationsClient() {
         </div>
         <div className="field">
           <label>学历不低于</label>
-          <select value={filters.education} onChange={(e) => updateFilter('education', e.target.value)}>
+          <select value={filters.education} onChange={(event) => updateFilter('education', event.target.value)}>
             <option value="">不限</option>
             <option>大专</option>
             <option>本科</option>
@@ -160,13 +162,14 @@ export function RecommendationsClient() {
             placeholder="155"
             type="number"
             value={filters.minHeightCm}
-            onChange={(e) => updateFilter('minHeightCm', e.target.value)}
+            onChange={(event) => updateFilter('minHeightCm', event.target.value)}
           />
         </div>
         <button className="button" type="button" onClick={() => load()}>
           应用筛选
         </button>
       </div>
+
       <div className="actions">
         <button className="button ghost" type="button" onClick={() => load()}>
           刷新推荐
@@ -175,7 +178,9 @@ export function RecommendationsClient() {
           查看匹配
         </Link>
       </div>
+
       {message ? <p className={message.includes('不能') ? 'error' : 'status'}>{message}</p> : null}
+
       {items.length === 0 ? (
         <div className="panel">
           <h2>暂无推荐</h2>
@@ -195,6 +200,7 @@ export function RecommendationsClient() {
                   </p>
                 </div>
               </div>
+
               {item.profile.photos.length > 0 ? (
                 <div className="photo-grid">
                   {item.profile.photos.slice(0, 3).map((url) => (
@@ -202,18 +208,22 @@ export function RecommendationsClient() {
                   ))}
                 </div>
               ) : null}
+
               <p>{item.profile.bio}</p>
-              {item.profile.idealPartner ? (
-                <p className="subtle">期待：{item.profile.idealPartner}</p>
-              ) : null}
+              {item.profile.idealPartner ? <p className="subtle">期待：{item.profile.idealPartner}</p> : null}
+
               <div className="actions">
                 {item.profile.interests.map((tag) => (
                   <span className="tag" key={tag}>
                     {tag}
                   </span>
                 ))}
-                <span className="tag">匹配分 {item.score}</span>
+                <div className="score-badge" aria-label={`匹配分 ${item.score}`}>
+                  <span>匹配分</span>
+                  <strong>{item.score}</strong>
+                </div>
               </div>
+
               <div className="actions">
                 {item.reasons.map((reason) => (
                   <span className="tag reason" key={reason}>
@@ -221,6 +231,7 @@ export function RecommendationsClient() {
                   </span>
                 ))}
               </div>
+
               <div className="actions">
                 <button className="button" type="button" onClick={() => act(item.id, 'like')}>
                   喜欢

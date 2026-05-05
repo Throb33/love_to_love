@@ -1,11 +1,10 @@
 'use client';
 
-import {useEffect, useState} from 'react';
 import Link from 'next/link';
+import {useEffect, useState} from 'react';
 
 type Match = {
   id: string;
-  status: 'ACTIVE' | 'CLOSED';
   unreadCount: number;
   other: {
     id: string;
@@ -72,17 +71,14 @@ export function MatchesClient() {
                   </div>
                 </div>
               ) : null}
-              <p className="subtle">状态：{match.status === 'ACTIVE' ? '可聊天' : '已解除'}</p>
               <p>{match.lastMessage?.content ?? '还没有消息'}</p>
               <div className="actions">
                 <Link className="button" href={`/chat/${match.id}`}>
                   进入聊天
                 </Link>
-                {match.status === 'ACTIVE' ? (
-                  <button className="button ghost" type="button" onClick={() => close(match.id)}>
-                    解除匹配
-                  </button>
-                ) : null}
+                <button className="button ghost" type="button" onClick={() => close(match.id)}>
+                  解除匹配
+                </button>
               </div>
             </article>
           ))}

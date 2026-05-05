@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   const matches = await prisma.match.findMany({
-    where: {OR: [{userAId: user.id}, {userBId: user.id}]},
+    where: {status: 'ACTIVE', OR: [{userAId: user.id}, {userBId: user.id}]},
     include: {
       userA: {include: {profile: true}},
       userB: {include: {profile: true}},
@@ -24,7 +24,7 @@ export async function GET() {
     where: {
       senderId: {not: user.id},
       readAt: null,
-      match: {OR: [{userAId: user.id}, {userBId: user.id}]},
+      match: {status: 'ACTIVE', OR: [{userAId: user.id}, {userBId: user.id}]},
     },
     _count: {_all: true},
   });

@@ -291,9 +291,61 @@ textarea {
   color: var(--green);
 }
 
+.score-badge {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid rgba(232, 93, 117, 0.32);
+  border-radius: 8px;
+  background: #fff2f5;
+  color: var(--brand-dark);
+  padding: 0 12px;
+  box-shadow: 0 8px 18px rgba(232, 93, 117, 0.12);
+}
+
+.score-badge span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.score-badge strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
 .status {
   color: var(--green);
   font-weight: 900;
+}
+
+.state-callout {
+  border: 1px solid #ead4a7;
+  border-radius: 8px;
+  background: #fff8e8;
+  padding: 14px 16px;
+}
+
+.state-callout strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.state-callout p {
+  margin: 0;
+}
+
+.state-callout.warning {
+  border-color: #ead4a7;
+  background: #fff8e8;
+  color: #7c5520;
+}
+
+.state-callout.danger {
+  border-color: #efb8c2;
+  background: #fff0f3;
+  color: #9f2f3f;
 }
 
 .error {
