@@ -27,11 +27,34 @@ type PendingMessage = {
   error?: string;
 };
 
-const topicPrompts = [
-  {label: '聊聊兴趣', text: '看到我们有共同兴趣，平时你最常做的是哪一个？'},
-  {label: '周末计划', text: '你周末一般喜欢怎么安排？'},
-  {label: '理想关系', text: '你理想中的相处状态是什么样的？'},
-];
+const topicLabels = ['聊聊兴趣', '周末计划', '理想关系'];
+
+const suggestionsFor = (topic: string, user: ChatUser | null) => {
+  const interest = user?.sharedInterests?.[0] ?? user?.interests?.[0] ?? '最近喜欢的事情';
+  const name = user?.nickname ?? '你';
+
+  if (topic === '聊聊兴趣') {
+    return [
+      `看到你也喜欢${interest}，你一般什么时候会去做？`,
+      `${interest}里面你最喜欢的是哪一部分？`,
+      `如果周末有空，可以听你聊聊${interest}。`,
+    ];
+  }
+
+  if (topic === '周末计划') {
+    return [
+      '你周末一般喜欢安静一点，还是出门走走？',
+      `你在${user?.city ?? '现在的城市'}有常去的放松地点吗？`,
+      '如果安排一次轻松见面，你更喜欢咖啡还是散步？',
+    ];
+  }
+
+  return [
+    `${name}，你理想中的相处节奏是什么样的？`,
+    '你觉得一段长期关系里最重要的是什么？',
+    '你更看重稳定陪伴，还是一起探索新鲜事？',
+  ];
+};
 
 export function ChatClient({
   matchId,
@@ -48,6 +71,8 @@ export function ChatClient({
   const [otherUserId, setOtherUserId] = useState('');
   const [otherUser, setOtherUser] = useState<ChatUser | null>(null);
   const [showReportForm, setShowReportForm] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [activeTopic, setActiveTopic] = useState('');
   const [reportType, setReportType] = useState('HARASSMENT');
   const [reportDescription, setReportDescription] = useState('');
   const [canSend, setCanSend] = useState(true);
@@ -81,7 +106,7 @@ export function ChatClient({
 
   useEffect(() => {
     threadRef.current?.scrollTo({top: threadRef.current.scrollHeight});
-  }, [messages.length, pending?.content]);
+  }, [messages.length, pending?.content, activeTopic]);
 
   const sendContent = async (nextContent: string) => {
     setSending(true);
@@ -101,6 +126,7 @@ export function ChatClient({
 
     setContent('');
     setPending(null);
+    setActiveTopic('');
     setStatus('');
     load();
   };
@@ -145,33 +171,55 @@ export function ChatClient({
 
   return (
     <section className="dating-chat">
-      <header className="dating-chat-header">
-        <Link className="icon-link" href="/matches" aria-label="返回匹配列表">
+      <div className="match-insight chat-profile-top">
+        <Link className="icon-link compact" href="/matches" aria-label="返回匹配列表">
           ‹
         </Link>
-        <div className="dating-peer">
+        <button className="profile-summary" type="button" onClick={() => setShowProfile(true)}>
           <Avatar className="dating-peer-avatar" src={otherUser?.avatarUrl} />
-          <div>
+          <span>
             <strong>{otherUser?.nickname ?? '聊天对象'}</strong>
-            <span>
+            <em>
               {otherUser?.age ? `${otherUser.age} 岁` : '已匹配'}
               {otherUser?.city ? ` · ${otherUser.city}` : ''}
-            </span>
-          </div>
-        </div>
-        <button className="icon-button" type="button" onClick={() => setShowReportForm((value) => !value)} aria-label="更多">
+            </em>
+          </span>
+        </button>
+        <button className="icon-button compact" type="button" onClick={() => setShowReportForm((value) => !value)}>
           ⋯
         </button>
-      </header>
-
-      <div className="match-insight">
-        <div>
+        <div className="match-score-pill">
           <span>匹配度</span>
           <strong>{otherUser?.compatibilityScore ?? 86}</strong>
         </div>
         <p>共同兴趣：{sharedInterests.length > 0 ? sharedInterests.join('、') : '认真生活、真诚沟通'}</p>
-        <em>已通过资料审核</em>
+        <em className="verified-pill">已通过资料审核</em>
       </div>
+
+      {showProfile ? (
+        <div className="profile-popover">
+          <button className="profile-popover-backdrop" type="button" onClick={() => setShowProfile(false)} />
+          <article className="profile-popover-card">
+            <Avatar className="profile-popover-avatar" src={otherUser?.avatarUrl} />
+            <h2>{otherUser?.nickname ?? '聊天对象'}</h2>
+            <p className="subtle">
+              {otherUser?.age ? `${otherUser.age} 岁` : '已匹配'}
+              {otherUser?.city ? ` · ${otherUser.city}` : ''}
+            </p>
+            <div className="actions">
+              {(otherUser?.interests ?? []).slice(0, 5).map((interest) => (
+                <span className="tag" key={interest}>
+                  {interest}
+                </span>
+              ))}
+            </div>
+            <p className="subtle">匹配度 {otherUser?.compatibilityScore ?? 86}，资料已通过平台审核。</p>
+            <button className="button" type="button" onClick={() => setShowProfile(false)}>
+              继续聊天
+            </button>
+          </article>
+        </div>
+      ) : null}
 
       {showReportForm ? (
         <form className="dating-report-form" onSubmit={submitReport}>
@@ -218,20 +266,33 @@ export function ChatClient({
                 avatarUrl={avatarFor(message.senderId)}
                 isMine={isMine}
                 message={message}
+                onAvatarClick={!isMine ? () => setShowProfile(true) : undefined}
               />
               {shouldShowTopics ? (
-                <div className="icebreakers">
-                  {topicPrompts.map((topic) => (
-                    <button
-                      disabled={!canSend}
-                      key={topic.label}
-                      type="button"
-                      onClick={() => setContent(topic.text)}
-                    >
-                      {topic.label}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="icebreakers">
+                    {topicLabels.map((topic) => (
+                      <button
+                        className={activeTopic === topic ? 'active' : ''}
+                        disabled={!canSend}
+                        key={topic}
+                        type="button"
+                        onClick={() => setActiveTopic(activeTopic === topic ? '' : topic)}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                  {activeTopic ? (
+                    <div className="suggestion-panel">
+                      {suggestionsFor(activeTopic, otherUser).map((suggestion) => (
+                        <button key={suggestion} type="button" onClick={() => setContent(suggestion)}>
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </div>
           );
@@ -282,14 +343,16 @@ function MessageRow({
   avatarUrl,
   isMine,
   message,
+  onAvatarClick,
 }: {
   avatarUrl?: string;
   isMine: boolean;
   message: Message;
+  onAvatarClick?: () => void;
 }) {
   return (
     <div className={`dating-message-row ${isMine ? 'mine' : ''}`}>
-      {!isMine ? <Avatar className="dating-avatar" src={avatarUrl} /> : null}
+      {!isMine ? <AvatarButton src={avatarUrl} onClick={onAvatarClick} /> : null}
       <div className="dating-bubble">
         <p>{message.content}</p>
         {isMine ? <small>{message.readAt ? '已读' : '未读'}</small> : null}
@@ -301,4 +364,12 @@ function MessageRow({
 
 function Avatar({src, className}: {src?: string; className: string}) {
   return src ? <img className={className} src={src} alt="" /> : <span className={className} />;
+}
+
+function AvatarButton({src, onClick}: {src?: string; onClick?: () => void}) {
+  return (
+    <button className="avatar-button" type="button" onClick={onClick} aria-label="查看用户资料">
+      <Avatar className="dating-avatar" src={src} />
+    </button>
+  );
 }
