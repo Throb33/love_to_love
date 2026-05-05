@@ -283,6 +283,49 @@ textarea {
   align-items: center;
 }
 
+.profile-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.profile-detail {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.profile-detail p {
+  margin: 0;
+}
+
+.mini-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mini-photo-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;

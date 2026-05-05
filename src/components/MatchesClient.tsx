@@ -11,16 +11,22 @@ type Match = {
     nickname: string;
     age: number;
     city: string;
+    heightCm?: number | null;
+    education: string;
     occupation: string;
     avatarUrl: string;
+    photos: string[];
+    bio: string;
+    idealPartner?: string | null;
     interests: string[];
   } | null;
-  lastMessage?: {content: string; createdAt: string} | null;
+  lastMessage?: {createdAt: string} | null;
 };
 
 export function MatchesClient() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [message, setMessage] = useState('');
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
 
   const load = async () => {
     const res = await fetch('/api/matches');
@@ -56,27 +62,65 @@ export function MatchesClient() {
           {matches.map((match) => (
             <article className="card grid" key={match.id}>
               {match.other ? (
-                <div className="profile-row">
-                  <img className="avatar" src={match.other.avatarUrl} alt="" />
-                  <div>
-                    <h2>
-                      {match.other.nickname}
-                      {match.unreadCount > 0 ? (
-                        <span className="unread-badge">{match.unreadCount}</span>
+                <>
+                  <button
+                    className="profile-trigger"
+                    type="button"
+                    onClick={() => setOpenProfileId((current) => (current === match.id ? null : match.id))}
+                  >
+                    <span className="profile-row">
+                      <img className="avatar" src={match.other.avatarUrl} alt="" />
+                      <span>
+                        <strong className="profile-title">
+                          {match.other.nickname}
+                          {match.unreadCount > 0 ? (
+                            <span className="unread-badge">{match.unreadCount}</span>
+                          ) : null}
+                        </strong>
+                        <span className="subtle">
+                          {match.other.age} 岁 · {match.other.city} · {match.other.occupation}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+
+                  {openProfileId === match.id ? (
+                    <div className="profile-detail">
+                      <p className="subtle">
+                        {match.other.heightCm ? `${match.other.heightCm}cm · ` : ''}
+                        {match.other.education} · {match.other.city}
+                      </p>
+                      <p>{match.other.bio}</p>
+                      {match.other.idealPartner ? (
+                        <p className="subtle">期待：{match.other.idealPartner}</p>
                       ) : null}
-                    </h2>
-                    <p className="subtle">
-                      {match.other.age} 岁 · {match.other.city} · {match.other.occupation}
-                    </p>
-                  </div>
-                </div>
+                      {match.other.photos.length > 0 ? (
+                        <div className="mini-photo-grid">
+                          {match.other.photos.slice(0, 3).map((url) => (
+                            <img src={url} alt="" key={url} />
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="actions">
+                        {match.other.interests.map((tag) => (
+                          <span className="tag" key={tag}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               ) : null}
-              <p>{match.lastMessage?.content ?? '还没有消息'}</p>
+
               {match.lastMessage ? (
                 <p className="subtle">
                   最后消息：{new Date(match.lastMessage.createdAt).toLocaleString('zh-CN')}
                 </p>
-              ) : null}
+              ) : (
+                <p className="subtle">还没有消息</p>
+              )}
+
               <div className="actions">
                 <Link className="button" href={`/chat/${match.id}`}>
                   进入聊天
